@@ -6,6 +6,10 @@ Overview
 
 RPListening is an Open Source desktop client for Roku private listening.
 
+Supported Operating Systems:
+* Mac OS
+* Linux
+* Windows (in the future)
 
 Dependencies
 ------------
@@ -46,6 +50,10 @@ Donations can be made via PayPal:
 **PayPal**
 
 - You can donate [**here**](https://www.paypal.com/donate/?cmd=_s-xclick&hosted_button_id=DR3PCSQTSSCMU).
+
+Credit
+------------
+When I was coding up this application I had a difficult time finding a good sample Java based RTP/RTCP implementation. A big thank you to Henning Schulzrinne for publishing the source for [**JRTPMon**](https://www.cs.columbia.edu/~hgs/teaching/ais/1998/projects/java_rtp/JRTPMon.tar.gz). This code was an invaluable resource and this project would not have been possible with the ability to study and use parts of Henning's source code.
 
 License
 ------------
