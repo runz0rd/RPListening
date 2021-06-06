@@ -11,7 +11,7 @@ Supported Operating Systems:
 * Linux
 * Windows (in the future)
 
-The latest (beta) release can be found [**here**](https://github.com/wseemann/RPListening/releases/).
+The latest (beta) release can be found [**here**](https://github.com/wseemann/RPListening/releases/latest/).
 
 Dependencies
 ------------
