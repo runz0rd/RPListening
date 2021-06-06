@@ -11,6 +11,8 @@ Supported Operating Systems:
 * Linux
 * Windows (in the future)
 
+The latest (beta) release can be found [**here**](https://github.com/wseemann/RPListening/releases/).
+
 Dependencies
 ------------
 
@@ -53,7 +55,7 @@ Donations can be made via PayPal:
 
 Credit
 ------------
-When I was coding up this application I had a difficult time finding a good sample Java based RTP/RTCP implementation. A big thank you to Henning Schulzrinne for publishing the source for [**JRTPMon**](https://www.cs.columbia.edu/~hgs/teaching/ais/1998/projects/java_rtp/JRTPMon.tar.gz). This code was an invaluable resource and this project would not have been possible with the ability to study and use parts of Henning's source code.
+When I was coding up this application I had a difficult time finding a good sample Java based RTP/RTCP implementation. A big thank you to Henning Schulzrinne for publishing the source for [**JRTPMon**](https://www.cs.columbia.edu/~hgs/teaching/ais/1998/projects/java_rtp/JRTPMon.tar.gz). This code was an invaluable resource and this project would't have been possible with the ability to study and use parts of Henning's source code.
 
 License
 ------------
