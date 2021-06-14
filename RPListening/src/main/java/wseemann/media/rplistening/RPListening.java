@@ -43,7 +43,7 @@ public class RPListening {
 	public static void main(String[] args) {		
 		PrivateListeningSession.setDebugMode(false);
 		
-		App.launch(RPListeningApp.class, args);
+		//App.launch(RPListeningApp.class, args);
 		
 		CommandLineArgs commandLineArgs = new CommandLineArgs();
 		CommandLine commandLine = new CommandLine(commandLineArgs);
