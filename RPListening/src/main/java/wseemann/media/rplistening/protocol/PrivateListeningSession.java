@@ -21,10 +21,18 @@ package wseemann.media.rplistening.protocol;
 
 import java.util.*;
 
+import com.jaku.api.QueryRequests;
+import com.jaku.model.Device;
+
 import wseemann.media.rplistening.protocol.rtcp.RTCPThreadHandler;
 import wseemann.media.rplistening.protocol.rtp.RTPThreadHandler;
+import wseemann.media.rplistening.utils.Constants;
 import wseemann.media.rplistening.utils.Log;
+import wseemann.media.rplistening.utils.ShellCommand;
+import wseemann.media.rplistening.websocket.RokuWebSocketListener;
+import wseemann.media.rplistening.websocket.WebSocketConnectionImpl;
 
+import java.io.IOException;
 import java.net.*;
 
 /**
@@ -32,7 +40,7 @@ import java.net.*;
  * functions.
  */
 
-public class Session extends java.lang.Object {
+public class PrivateListeningSession extends java.lang.Object {
 
 	private static String TAG = "Session";
 	
@@ -161,8 +169,110 @@ public class Session extends java.lang.Object {
 	/**
 	 * A hastable that stores all the sources subscribed to this multicast group
 	 */
-	private static Hashtable SourceMap;
+	private static Hashtable<Long, Source> SourceMap;
 
+	private static WebSocketConnectionImpl webSocketConnection;
+	private static PrivateListeningSession session;
+	private static Process ffplayProcess;
+	
+	/**
+	 * Requires CNAME and session bandwidth. Initializes the SSRC to a randomly generated number.
+	 *
+	 * @param MulticastGroupIPAddress Dotted decimal representation of the Multicast
+	 *                                group IP address.
+	 * @param MulticastGroupPort      Port number of the Multcast group.
+	 * @param RTCPGroupPort           Port on which the session will receive ( and
+	 *                                send to ) the RTCP packets.
+	 * @param RTPSendFromPort         Local port from which the RTP packets are sent
+	 *                                out (must be different from
+	 *                                MulticastGroupPort).
+	 * @param RTCPSendFromPort        Local port from which the RTCP packets are
+	 *                                sent out (must be different from
+	 *                                RTCPGroupPort).
+	 * @param bandwidth               Bandwidth available to the session.
+	 */
+	public static void connect(String rokuIPAddress, ConnectionListener listener) {
+		try {
+			String rokuAddress = "http://" + rokuIPAddress + ":" + Constants.ROKU_ECP_PORT;
+
+			String hostAddress = InetAddress.getLocalHost().getHostAddress();
+
+			supportsPrivateListening(rokuAddress, listener);
+
+			webSocketConnection = new WebSocketConnectionImpl(rokuAddress,
+					new RokuWebSocketListener() {
+
+				@Override
+				public void onAuthSuccess() {
+					Log.d(TAG, "onAuthSuccess!");
+					webSocketConnection.setAudioOutput(hostAddress + ":" + Constants.RTP_PORT);
+				}
+
+				@Override
+				public void onSetAudioOutput() {
+					Log.d(TAG, "onSetAudioOutput!");
+
+					session = new PrivateListeningSession(
+							rokuIPAddress,
+							hostAddress,
+							Constants.RTP_PORT,
+							Constants.RTCP_PORT,
+							Constants.RTP_OUTBOUND_PORT,
+							Constants.RTP_PORT,
+							10000	
+							);
+					session.setPayloadType(Constants.RTP_PAYLOAD_TYPE);
+					session.startRTPReceiverThread();
+
+					ShellCommand shellCommand = new ShellCommand();
+					ffplayProcess = shellCommand.executeCommand("");
+					listener.onConnected(session);
+				}
+
+				@Override
+				public void onAuthFailed() {
+					listener.onFailure(new Exception("Auth failure"));
+				}
+			});
+
+			webSocketConnection.connect();
+		} catch (IOException e) {
+			listener.onFailure(e);
+			return;
+		}
+	}
+	
+	public static void disconnect(PrivateListeningSession session) {
+		if (session != null) {
+			session.stopRTCPSenderThread();
+			session.stopRTPReceiverThread();
+			
+			synchronized(ffplayProcess) {
+				if (ffplayProcess != null) {
+					try {
+						ffplayProcess.destroyForcibly().wait(4000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+	
+	public static void setDebugMode(boolean isDebugMode) {
+		Log.suppressLogs = !isDebugMode;
+	}
+	
+	private static void supportsPrivateListening(String rokuAddress, ConnectionListener listener) throws IOException {
+		Device device = QueryRequests.queryDeviceInfo(rokuAddress);
+
+		String supportsPrivateListening = device.getSupportsPrivateListening();
+
+		if (supportsPrivateListening == null || Boolean.valueOf(supportsPrivateListening) == false) {
+			listener.onFailure(new Exception("Device does not support private listening"));
+		}
+	}
+	
 	/**
 	 * The only constructor. Requires CNAME and session bandwidth. Initializes the
 	 * SSRC to a randomly generated number.
@@ -180,13 +290,13 @@ public class Session extends java.lang.Object {
 	 *                                RTCPGroupPort).
 	 * @param bandwidth               Bandwidth available to the session.
 	 */
-	public Session(String MulticastGroupIPAddress, String loopbackIPAddress, int MulticastGroupPort, int RTCPGroupPort, int RTPSendFromPort,
+	private PrivateListeningSession(String MulticastGroupIPAddress, String loopbackIPAddress, int MulticastGroupPort, int RTCPGroupPort, int RTPSendFromPort,
 			int RTCPSendFromPort, double bandwidth)
 
 	{
 		this.bandwidth = bandwidth;
 
-		SourceMap = new Hashtable();
+		SourceMap = new Hashtable<Long, Source>();
 
 		InetAddress inetAddress = GetInetAddress(MulticastGroupIPAddress);
 		InetAddress loopbackAddress = GetInetAddress(loopbackIPAddress);
@@ -411,8 +521,8 @@ public class Session extends java.lang.Object {
 		 */
 		double noise = (rnd.nextDouble() + 0.5);
 
-		Session.Td = t;
-		Session.T = t * (double) noise;
+		PrivateListeningSession.Td = t;
+		PrivateListeningSession.T = t * (double) noise;
 		return t;
 	}
 
@@ -437,7 +547,7 @@ public class Session extends java.lang.Object {
 		tn = T;
 
 		// Add self as a source object into the SSRC table maintained by the session
-		Session.AddSource(Session.SSRC, new Source(Session.SSRC));
+		PrivateListeningSession.AddSource(PrivateListeningSession.SSRC, new Source(PrivateListeningSession.SSRC));
 
 		return (0);
 	}

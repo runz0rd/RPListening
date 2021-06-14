@@ -9,6 +9,7 @@
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
+    id "org.jetbrains.kotlin.jvm" version "1.5.10"
 }
 
 sourceCompatibility = 1.8
@@ -20,6 +21,11 @@ jar {
         attributes 'Implementation-Title': 'rplistening-',
                    'Implementation-Version': version
     }
+}
+
+sourceSets {
+    main.kotlin.srcDirs += 'src/main/myKotlin'
+    main.java.srcDirs += 'src/main/myJava'
 }
 
 task customFatJar(type: Jar) {
@@ -40,6 +46,7 @@ repositories {
 }
 
 dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api 'org.apache.commons:commons-math3:3.6.1'
     compile 'com.squareup.okhttp3:okhttp:4.4.0'
@@ -47,6 +54,8 @@ dependencies {
     compile 'org.simpleframework:simple-xml:2.7.1'
     compile 'com.google.code.gson:gson:2.8.6'
     compile 'info.picocli:picocli:4.6.1'
+    compile 'no.tornado:tornadofx:1.7.20'
+    compile 'org.jdom:jdom2:2.0.6'
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:28.2-jre'

@@ -22,7 +22,7 @@ package wseemann.media.rplistening.protocol.rtcp;
 import java.net.*;
 import java.util.*;
 
-import wseemann.media.rplistening.protocol.Session;
+import wseemann.media.rplistening.protocol.PrivateListeningSession;
 import wseemann.media.rplistening.protocol.Source;
 import wseemann.media.rplistening.protocol.utils.PacketUtils;
 import wseemann.media.rplistening.protocol.utils.RTCPConstants;
@@ -138,34 +138,34 @@ public class RTCPSenderThread extends Thread {
 			}
 
 			// Update T and Td (Session level variables)
-			Session.CalculateInterval();
+			PrivateListeningSession.CalculateInterval();
 
 			Log.d(TAG, "RTCP wait");
 
 			// If inturrepted during this sleep time, continue with execution
-			int sleepResult = SleepTillInterrupted(Session.T);
+			int sleepResult = SleepTillInterrupted(PrivateListeningSession.T);
 
 			if (sleepResult == 0) {
 				// Sleep was interrupted, this only occurs if thread
 				// was terminated to indicate a request to send a BYE packet
 				WaitingForByeBackoff = true;
-				Session.IsByeRequested = true;
+				PrivateListeningSession.IsByeRequested = true;
 			}
 
 			// See if it is the right time to send a RTCP packet or reschedule {{A True}}
-			if ((Session.TimeOfLastRTCPSent + Session.T) <= Session.CurrentTime()) {
+			if ((PrivateListeningSession.TimeOfLastRTCPSent + PrivateListeningSession.T) <= PrivateListeningSession.CurrentTime()) {
 				// We know that it is time to send a RTCP packet, is it a BYE packet {{B True}}
-				if ((Session.IsByeRequested && WaitingForByeBackoff)) {
+				if ((PrivateListeningSession.IsByeRequested && WaitingForByeBackoff)) {
 					// If it is bye then did we ever sent anything {{C True}}
-					if (Session.TimeOfLastRTCPSent > 0 && Session.timeOfLastRTPSent > 0) {
+					if (PrivateListeningSession.TimeOfLastRTCPSent > 0 && PrivateListeningSession.timeOfLastRTPSent > 0) {
 						// ** BYE Backoff Algorithm **
 						// Yes, we did send something, so we need to send this RTCP BYE
 						// but first remove all sources from the table
-						Session.RemoveAllSources();
+						PrivateListeningSession.RemoveAllSources();
 
 						// We are not active senders anymore
-						Session.GetMySource().setActiveSender(false);
-						Session.TimeOfLastRTCPSent = Session.CurrentTime();
+						PrivateListeningSession.GetMySource().setActiveSender(false);
+						PrivateListeningSession.TimeOfLastRTCPSent = PrivateListeningSession.CurrentTime();
 					} else // We never sent anything and we have to quit :( do not send BYE {{C False}}
 					{
 						terminate = true;
@@ -176,13 +176,13 @@ public class RTCPSenderThread extends Thread {
 					SendPacket(CompoundRTCPPacket);
 
 					// If the packet just sent was a BYE packet, then its time to terminate.
-					if (Session.IsByeRequested && !WaitingForByeBackoff) // {{D True}}
+					if (PrivateListeningSession.IsByeRequested && !WaitingForByeBackoff) // {{D True}}
 					{
 						// We have sent a BYE packet, so its time to terminate
 						terminate = true;
 					} else // {{D False}}
 					{
-						Session.TimeOfLastRTCPSent = Session.CurrentTime();
+						PrivateListeningSession.TimeOfLastRTCPSent = PrivateListeningSession.CurrentTime();
 					}
 
 				}
@@ -193,8 +193,8 @@ public class RTCPSenderThread extends Thread {
 			}
 
 			WaitingForByeBackoff = false;
-			Session.tn = Session.CurrentTime() + Session.T;
-			Session.pmembers = Session.GetNumberOfMembers();
+			PrivateListeningSession.tn = PrivateListeningSession.CurrentTime() + PrivateListeningSession.T;
+			PrivateListeningSession.pmembers = PrivateListeningSession.GetNumberOfMembers();
 
 		}
 
@@ -308,7 +308,7 @@ public class RTCPSenderThread extends Thread {
 		);
 
 		// SSRC of sender
-		byte ss[] = PacketUtils.LongToBytes(Session.SSRC, 4);
+		byte ss[] = PacketUtils.LongToBytes(PrivateListeningSession.SSRC, 4);
 
 		// Payload Type = RR
 		byte PT[] = PacketUtils.LongToBytes((long) RTCPConstants.RTCP_RR, 1);
@@ -464,7 +464,7 @@ public class RTCPSenderThread extends Thread {
 		// that no more than 31 blocks are generated.
 		int ReceptionReportBlocks = 0;
 
-		Enumeration ActiveSenderCollection = Session.GetSources();
+		Enumeration ActiveSenderCollection = PrivateListeningSession.GetSources();
 
 		// Iterate through all the sources and generate packets for those
 		// that are active senders.
@@ -475,7 +475,7 @@ public class RTCPSenderThread extends Thread {
 			// "\t"
 			// + "Session.TimeOfLastRTCPSent : " + Session.TimeOfLastRTCPSent + "\n" );
 
-			if ((s.getTimeOfLastRTPArrival() > Session.TimeOfLastRTCPSent) && (s.getSsrc() != Session.SSRC)) {
+			if ((s.getTimeOfLastRTPArrival() > PrivateListeningSession.TimeOfLastRTCPSent) && (s.getSsrc() != PrivateListeningSession.SSRC)) {
 				ReportBlock = PacketUtils.Append(ReportBlock, AssembleRTCPReceptionReportBlock(s));
 				ReceptionReportBlocks++;
 			}

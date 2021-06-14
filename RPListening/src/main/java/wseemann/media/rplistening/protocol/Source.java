@@ -138,7 +138,7 @@ public class Source {
 	 */
 
 	Source(long sourceSSRC) {
-		long time = Session.CurrentTime();
+		long time = PrivateListeningSession.CurrentTime();
 		setSsrc(sourceSSRC);
 		setFraction(0);
 		setLost(0);
@@ -381,7 +381,7 @@ public class Source {
 			setFraction((lost_interval << 8) / expected_interval);
 
 		// dlsr - express it in units of 1/65336 seconds
-		setDlsr((getTimeOfLastSRRcvd() - Session.CurrentTime()) / 65536);
+		setDlsr((getTimeOfLastSRRcvd() - PrivateListeningSession.CurrentTime()) / 65536);
 
 		return 0;
 	}

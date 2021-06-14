@@ -7,7 +7,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Random;
 
-import wseemann.media.rplistening.protocol.Session;
+import wseemann.media.rplistening.protocol.PrivateListeningSession;
 import wseemann.media.rplistening.protocol.Source;
 import wseemann.media.rplistening.utils.Log;
 
@@ -103,9 +103,9 @@ private static String TAG = "RTPThreadHandler";
 
 		// Start with a random sequence number
 		sequence_number = (long) (Math.abs(rnd.nextInt()) & 0x000000FF);
-		timestamp = Session.CurrentTime() + RandomOffset;
+		timestamp = PrivateListeningSession.CurrentTime() + RandomOffset;
 
-		Log.d(TAG, "RTP Session SSRC: " + Long.toHexString(Session.SSRC));
+		Log.d(TAG, "RTP Session SSRC: " + Long.toHexString(PrivateListeningSession.SSRC));
 		Log.d(TAG, " Starting Seq: " + sequence_number);
 		/////////////
 		// Initialize a Multicast Sender Port to send RTP Packets
@@ -136,7 +136,7 @@ private static String TAG = "RTPThreadHandler";
 		byte buf[] = new byte[1024];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
-		PayloadType = Session.getPayloadType();
+		PayloadType = PrivateListeningSession.getPayloadType();
 
 		try {
 
@@ -145,7 +145,7 @@ private static String TAG = "RTPThreadHandler";
 			
 			// s.joinGroup ( m_InetAddress );
 
-			while (1 == 1) {
+			while (!Thread.currentThread().isInterrupted()) {
 				RTCPSenderSocket.receive(packet);
 				
 				Runnable runnable = new Runnable() {
@@ -199,13 +199,13 @@ private static String TAG = "RTPThreadHandler";
 					startRTCPRSender();
 
 					// Get the source corresponding to this SSRC
-					Source RTPSource = Session.GetSource(SSRC);
+					Source RTPSource = PrivateListeningSession.GetSource(SSRC);
 
 					// Set teh Active Sender Property to true
 					RTPSource.setActiveSender(true);
 
 					// Set the time of last RTP Arrival
-					RTPSource.setTimeOfLastRTPArrival(Session.tc = Session.CurrentTime());
+					RTPSource.setTimeOfLastRTPArrival(PrivateListeningSession.tc = PrivateListeningSession.CurrentTime());
 
 					// Update the sequence number
 					RTPSource.updateSeq(SeqNo);
@@ -245,7 +245,7 @@ private static String TAG = "RTPThreadHandler";
 			Runnable runnable = new Runnable() {
 				@Override
 				public void run() {
-					Session.m_RTCPHandler.startRTCPSenderThread(RTCPSenderSocket);
+					PrivateListeningSession.m_RTCPHandler.startRTCPSenderThread(RTCPSenderSocket);
 				}
 			};
 			Thread thread = new Thread(runnable);
@@ -280,7 +280,7 @@ private static String TAG = "RTPThreadHandler";
 		// 0 1 0 1 1 0 0 0
 
 		// Payload Type must be the same as the session's
-		if ((packet[1] & 0x7F) == Session.getPayloadType())
+		if ((packet[1] & 0x7F) == PrivateListeningSession.getPayloadType())
 			payloadTypeValid = true;
 		else
 			payloadTypeValid = false;

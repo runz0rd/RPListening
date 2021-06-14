@@ -19,34 +19,31 @@
 
 package wseemann.media.rplistening;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Scanner;
-
-import picocli.CommandLine;
-import picocli.CommandLine.ParseResult;
-import wseemann.media.rplistening.protocol.Session;
+import wseemann.media.rplistening.protocol.ConnectionListener;
+import wseemann.media.rplistening.protocol.PrivateListeningSession;
+import wseemann.media.rplistening.ui.RPListeningApp;
 import wseemann.media.rplistening.utils.CommandLineArgs;
 import wseemann.media.rplistening.utils.Constants;
 import wseemann.media.rplistening.utils.DeviceDiscovery;
 import wseemann.media.rplistening.utils.Log;
-import wseemann.media.rplistening.utils.ShellCommand;
-import wseemann.media.rplistening.websocket.RokuWebSocketListener;
-import wseemann.media.rplistening.websocket.WebSocketConnection;
-import wseemann.media.rplistening.websocket.WebSocketConnectionImpl;
+
+import java.util.Scanner;
+
+import picocli.CommandLine;
+import picocli.CommandLine.ParseResult;
+import tornadofx.App;
 
 public class RPListening {
 
 	private static String TAG = "RPListening";
 	
 	private static String testDeviceIp = null;
-	private static WebSocketConnection webSocketConnection;
-	private static Session session;
-	private static Process ffplayProcess;
-	private static String hostAddress;
+	private static PrivateListeningSession session = null;	
 
-	public static void main(String[] args) {
-		Log.suppressLogs = true;
+	public static void main(String[] args) {		
+		PrivateListeningSession.setDebugMode(false);
+		
+		App.launch(RPListeningApp.class, args);
 		
 		CommandLineArgs commandLineArgs = new CommandLineArgs();
 		CommandLine commandLine = new CommandLine(commandLineArgs);
@@ -70,83 +67,36 @@ public class RPListening {
 			System.exit(0);
 		}
 
-		String rokuAddress;
+		String rokuIPAddress;
 		
 		if (commandLineArgs.deviceIp != null) {
-			rokuAddress = commandLineArgs.deviceIp;
+			rokuIPAddress = commandLineArgs.deviceIp;
 		} else {
-			rokuAddress = testDeviceIp;
+			rokuIPAddress = testDeviceIp;
 		}
 
-		try {
-			hostAddress = InetAddress.getLocalHost().getHostAddress();
-		} catch (UnknownHostException e) {
-			System.out.println("Unable to determine localhost IP address. Exiting...");
-			System.exit(0);
-		}
+		PrivateListeningSession.connect(rokuIPAddress, new ConnectionListener() {
 
-		webSocketConnection = new WebSocketConnectionImpl("http://" + rokuAddress + ":" + Constants.ROKU_ECP_PORT,
-				new RokuWebSocketListener() {
+			@Override
+			public void onConnected(PrivateListeningSession session) {
+				RPListening.session = session;
+			}
 
-					@Override
-					public void onAuthSuccess() {
-						Log.d(TAG, "onAuthSuccess!");
-						webSocketConnection.setAudioOutput(hostAddress + ":" + Constants.RTP_PORT);
-					}
-
-					@Override
-					public void onSetAudioOutput() {
-						Log.d(TAG, "onSetAudioOutput!");
-
-						session = new Session(
-							rokuAddress,
-							hostAddress,
-							Constants.RTP_PORT,
-							Constants.RTCP_PORT,
-							Constants.RTP_OUTBOUND_PORT,
-							Constants.RTP_PORT,
-							10000	
-						);
-						session.setPayloadType(Constants.RTP_PAYLOAD_TYPE);
-						session.startRTPReceiverThread();
-
-						ShellCommand shellCommand = new ShellCommand();
-						ffplayProcess = shellCommand.executeCommand("");
-					}
-
-					@Override
-					public void onAuthFailed() {
-						
-					}
-				});
-
-		webSocketConnection.connect();
-
+			@Override
+			public void onFailure(Throwable error) {
+				PrivateListeningSession.disconnect(session);
+				RPListening.session = null;
+			}
+		});
+		
 		Scanner scanner = new Scanner(System.in);
 		//System.out.println("Press any key to exit...");
 		System.out.println("Use ctrl^c to exit...");
 		scanner.nextLine();
-		closeSession();
+		
+		PrivateListeningSession.disconnect(session);
 		scanner.close();
 		
 		System.exit(0);
-	}
-	
-	private static synchronized void closeSession() {
-		if (session != null) {
-			session.stopRTCPSenderThread();
-			session.stopRTPReceiverThread();
-		}
-		
-		synchronized(ffplayProcess) {
-		
-		if (ffplayProcess != null) {
-			try {
-				ffplayProcess.destroyForcibly().wait(4000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		}
 	}
 }
