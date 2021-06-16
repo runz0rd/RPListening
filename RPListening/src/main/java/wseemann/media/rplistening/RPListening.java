@@ -27,7 +27,11 @@ import wseemann.media.rplistening.utils.Constants;
 import wseemann.media.rplistening.utils.DeviceDiscovery;
 import wseemann.media.rplistening.utils.Log;
 
+import java.util.List;
 import java.util.Scanner;
+
+import com.jaku.api.DeviceRequests;
+import com.jaku.model.Device;
 
 import picocli.CommandLine;
 import picocli.CommandLine.ParseResult;

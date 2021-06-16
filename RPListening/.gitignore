@@ -5,3 +5,10 @@
 build
 
 bin
+
+# Eclipse files
+.classpath
+.gitattributes
+.project
+/.settings/
+.settings/
