@@ -56,6 +56,7 @@ dependencies {
     compile 'info.picocli:picocli:4.6.1'
     compile 'no.tornado:tornadofx:1.7.20'
     compile 'org.jdom:jdom2:2.0.6'
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.5.10"
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:28.2-jre'

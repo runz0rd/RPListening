@@ -18,6 +18,8 @@ import com.jaku.api.DeviceRequests
 import javafx.collections.FXCollections
 import javafx.beans.property.SimpleStringProperty
 import java.net.URL
+import java.net.SocketTimeoutException
+import com.jaku.model.Device
 
 class MyView: View("RPListening") {
 
@@ -34,7 +36,13 @@ class MyView: View("RPListening") {
 	override val root = form {}
 	
 	init {
-		val devices = DeviceRequests.discoverDevices()
+		var devices = listOf<Device>()
+		
+		try {
+			devices = DeviceRequests.discoverDevices()
+		} catch(e: SocketTimeoutException) {
+			
+		}
 		val deviceNames = FXCollections.observableArrayList<String>()
 		deviceNames.add(0, "+ Roku Device IP Address")
 		
@@ -59,7 +67,7 @@ class MyView: View("RPListening") {
 			deviceComboBox = ComboBox<String>()
 			deviceComboBox.items = deviceNames
 			deviceComboBox.getSelectionModel().selectFirst();
-			deviceComboBox.valueProperty().addListener { obs, old, new ->
+			deviceComboBox.valueProperty().addListener { _, _, new ->
 				 if (new != null && new == "+ Roku Device IP Address") {
 					 deviceTextField.setVisible(true)
 					 startButton.setDisable(true)
@@ -79,13 +87,16 @@ class MyView: View("RPListening") {
 			deviceTextField.setPromptText("192.168.1.1");
 			deviceTextField.setFocusTraversable(false);
 			deviceTextField.setVisible(false)
-			deviceTextField.textProperty().addListener { obs, old, new ->
+			deviceTextField.textProperty().addListener { _, _, new ->
 				if (new.length == 0) {
 					startButton.setDisable(true)
 				} else {
 					startButton.setDisable(false)
 				}
  			}
+			if (devices.size == 0) {
+				deviceTextField.setVisible(true)
+			}
 			
 			deviceTextVbox += deviceTextField
 			
