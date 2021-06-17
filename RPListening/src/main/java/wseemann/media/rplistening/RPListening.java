@@ -23,10 +23,9 @@ import wseemann.media.rplistening.protocol.ConnectionListener;
 import wseemann.media.rplistening.protocol.PrivateListeningSession;
 import wseemann.media.rplistening.ui.RPListeningApp;
 import wseemann.media.rplistening.utils.CommandLineArgs;
-import wseemann.media.rplistening.utils.Constants;
-import wseemann.media.rplistening.utils.DeviceDiscovery;
 import wseemann.media.rplistening.utils.Log;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -47,8 +46,6 @@ public class RPListening {
 	public static void main(String[] args) {		
 		PrivateListeningSession.setDebugMode(false);
 		
-		//App.launch(RPListeningApp.class, args);
-		
 		CommandLineArgs commandLineArgs = new CommandLineArgs();
 		CommandLine commandLine = new CommandLine(commandLineArgs);
 		commandLine.getCommandSpec().parser().collectErrors(true);
@@ -64,11 +61,19 @@ public class RPListening {
 			commandLine.printVersionHelp(System.out);
 			System.exit(0);
 		} else if (commandLineArgs.discoverDevices) {
-			String devices = DeviceDiscovery.discoverDevices(Constants.DEVICE_DISCOVERY_URL);
-			System.out.println(devices);
-			System.exit(0);
+			try {
+				List<Device> devices = DeviceRequests.discoverDevices();
+				
+				for (Device device : devices) {
+					System.out.println(device.getModelName() + " - " + device.getHost());
+				}
+				
+				System.exit(0);
+			} catch (IOException ex) {
+				System.out.println("No Roku devices found");
+			}
 		} else if (commandLineArgs.deviceIp == null && testDeviceIp == null) {
-			System.exit(0);
+			App.launch(RPListeningApp.class, args);
 		}
 
 		String rokuIPAddress;
@@ -94,7 +99,6 @@ public class RPListening {
 		});
 		
 		Scanner scanner = new Scanner(System.in);
-		//System.out.println("Press any key to exit...");
 		System.out.println("Use ctrl^c to exit...");
 		scanner.nextLine();
 		
