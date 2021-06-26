@@ -32,17 +32,8 @@ private static String TAG = "RTPThreadHandler";
 	 */
 	private InetAddress m_loopbackAddress;
 	
-	/**
-	 * Sender Port for RTP Packets
-	 */
-	private int m_sendPort;
-
-	/**
-	 * Multicast Socket for sending RTP
-	 */
-	private DatagramSocket m_sockSend;
-	
 	private DatagramSocket RTCPSenderSocket;
+	private DatagramSocket loopbackSocket;
 
 	/**
 	 * Initialize Random Number Generator
@@ -92,12 +83,11 @@ private static String TAG = "RTPThreadHandler";
 	 *
 	 */
 
-	public RTPReceiverThread(InetAddress MulticastAddress, InetAddress loopbackAddress, int SendFromLocalPort, int MulticastPort) {
+	public RTPReceiverThread(InetAddress MulticastAddress, InetAddress loopbackAddress, int MulticastPort) {
 		m_InetAddress = MulticastAddress;
 		m_loopbackAddress = loopbackAddress;
 		
 		m_mcastPort = MulticastPort;
-		m_sendPort = SendFromLocalPort;
 
 		Random rnd = new Random(); // Use time as default seed
 
@@ -107,15 +97,6 @@ private static String TAG = "RTPThreadHandler";
 
 		Log.d(TAG, "RTP Session SSRC: " + Long.toHexString(PrivateListeningSession.SSRC));
 		Log.d(TAG, " Starting Seq: " + sequence_number);
-		/////////////
-		// Initialize a Multicast Sender Port to send RTP Packets
-		Log.d(TAG, "Openning local port " + m_sendPort + " for sending RTP..");
-		try {
-			m_sockSend = new DatagramSocket(m_sendPort);
-		} catch (SocketException e) {
-			System.err.println(e);
-		}
-		Log.d(TAG, "Successfully openned local port " + m_sendPort);
 	}
 
 	/**
@@ -141,7 +122,7 @@ private static String TAG = "RTPThreadHandler";
 		try {
 
 			RTCPSenderSocket = new DatagramSocket(m_mcastPort);
-			DatagramSocket loopbackSocket = new DatagramSocket(5152);
+			loopbackSocket = new DatagramSocket(5152);
 			
 			// s.joinGroup ( m_InetAddress );
 
@@ -224,17 +205,17 @@ private static String TAG = "RTPThreadHandler";
 				}
 			}
 
+			RTCPSenderSocket.close();
+			loopbackSocket.close();
+			
 			// s.leaveGroup( m_InetAddress );
-
 			// s.close();
-		} catch (SocketException se) {
-			se.printStackTrace();
-			System.err.println(se);
-		}
-
-		catch (java.io.IOException e) {
-			e.printStackTrace();
-			Log.d(TAG, "IO exception");
+		} catch (SocketException ex) {
+			ex.printStackTrace();
+			Log.d(TAG, ex.getMessage());
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			Log.d(TAG, ex.getMessage());
 		}
 	}
 

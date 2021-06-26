@@ -28,7 +28,6 @@ public class Constants {
 	public static String DEVICE_DISCOVERY_URL = "http://239.255.255.250:1900";
 	public static int ROKU_ECP_PORT = 8060;
 	public static int RTP_PORT = 6970;
-	public static int RTP_OUTBOUND_PORT = 6971;
 	public static int RTCP_PORT = 5150;
 	public static int RTCP_OUTBOUND_PORT = 5051;
 	public static int RTP_PAYLOAD_TYPE = 97;

@@ -217,7 +217,6 @@ public class PrivateListeningSession extends java.lang.Object {
 							hostAddress,
 							Constants.RTP_PORT,
 							Constants.RTCP_PORT,
-							Constants.RTP_OUTBOUND_PORT,
 							Constants.RTP_PORT,
 							10000	
 							);
@@ -290,7 +289,7 @@ public class PrivateListeningSession extends java.lang.Object {
 	 *                                RTCPGroupPort).
 	 * @param bandwidth               Bandwidth available to the session.
 	 */
-	private PrivateListeningSession(String MulticastGroupIPAddress, String loopbackIPAddress, int MulticastGroupPort, int RTCPGroupPort, int RTPSendFromPort,
+	private PrivateListeningSession(String MulticastGroupIPAddress, String loopbackIPAddress, int MulticastGroupPort, int RTCPGroupPort,
 			int RTCPSendFromPort, double bandwidth)
 
 	{
@@ -302,7 +301,7 @@ public class PrivateListeningSession extends java.lang.Object {
 		InetAddress loopbackAddress = GetInetAddress(loopbackIPAddress);
 
 		// Create a new RTP Handler thread (but do not start it yet)
-		m_RTPHandler = new RTPThreadHandler(inetAddress, loopbackAddress, RTPSendFromPort, MulticastGroupPort);
+		m_RTPHandler = new RTPThreadHandler(inetAddress, loopbackAddress, MulticastGroupPort);
 
 		// Create a new RTCP Handler thread (but do not start it yet)
 		// Set the sendto and recvfrom ports

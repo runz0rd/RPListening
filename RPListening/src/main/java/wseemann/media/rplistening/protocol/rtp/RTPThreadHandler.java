@@ -41,8 +41,8 @@ public class RTPThreadHandler {
 	 * @param MulticastPort     Port for Multicast group (for receiving RTP
 	 *                          Packets).
 	 */
-	public RTPThreadHandler(InetAddress multicastAddress, InetAddress loopbackAddress, int sendFromLocalPort, int multicastPort) {
-		rtpReceiverThread = new RTPReceiverThread(multicastAddress, loopbackAddress, sendFromLocalPort, multicastPort);
+	public RTPThreadHandler(InetAddress multicastAddress, InetAddress loopbackAddress, int multicastPort) {
+		rtpReceiverThread = new RTPReceiverThread(multicastAddress, loopbackAddress, multicastPort);
 	}
 
 	/**
