@@ -35,19 +35,19 @@ Running
 RPListening can be run with a UI and without. To run with the application **with a UI** simply run the jar file
 or execute the following command in a terminal:
 
-    java -jar RPListening-1.0.jar
+    java -jar RPListening-1.1.jar
 
 To run the application **without a UI**:
 
-    java -jar RPListening-1.0.jar -i <Roku Device IP Address>
+    java -jar RPListening-1.1.jar -i <Roku Device IP Address>
 
 For example:
 
-    java -jar RPListening-1.0.jar -i 192.168.1.64
+    java -jar RPListening-1.1.jar -i 192.168.1.64
 
 If you don't know your devices IP address you can find it using the following command in a terminal:
 
-    java -jar RPListening-1.0.jar -d
+    java -jar RPListening-1.1.jar -d
 
 Donations
 ------------
