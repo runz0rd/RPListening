@@ -24,12 +24,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class ShellCommand {
 
-	private boolean isWindows;
+	private final boolean isWindows;
 	
 	public ShellCommand() {
 		isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
@@ -37,9 +36,9 @@ public class ShellCommand {
 	
 	//https://stackoverflow.com/questions/26830617/running-bash-commands-in-java
 	//https://www.baeldung.com/run-shell-command-in-java
-	public Process executeCommand(String command) {
+	public Process execute(String command) {
 		int exitCode = -1;
-		Process process = null;
+		java.lang.Process process = null;
 		
 		ProcessBuilder builder = new ProcessBuilder();
 		
@@ -48,7 +47,7 @@ public class ShellCommand {
 		} else {
 		    //builder.command("bash", "-c", "/Users/wseemann/Desktop/private.sh");
 			
-			String ffplayPath = executeShellCommand(Constants.FFPLAY_PATH_CMD);
+			String ffplayPath = findFFmpeg(); //executeShellCommand(Constants.FFPLAY_PATH_CMD);
 			String ffplayCmd = Constants.FFPLAY_CMD.replace("<ffplay>", ffplayPath);
 			
 			StringBuilder sb = new StringBuilder("echo");
@@ -66,22 +65,35 @@ public class ShellCommand {
 		try {
 			process = builder.start();
 		
-			StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
-			Executors.newSingleThreadExecutor().submit(streamGobbler);
+			//StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
+			//Executors.newSingleThreadExecutor().submit(streamGobbler);
 		
 			//exitCode = process.waitFor();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
-		return process; //exitCode == 0;
+		return new Process(process); //exitCode == 0;
+	}
+	
+	private String findFFmpeg() {
+	    String [] paths = {"/usr/local/bin/ffplay", "/usr/bin/ffplay"};
+		
+		for (int i = 0; i < paths.length; i++) {
+			File ffplayExecutable = new File(paths[i]);
+			if (ffplayExecutable.exists()) {
+				return paths[i];
+			}
+		}
+		
+		return "";
 	}
 	
 	private String executeShellCommand(String[] commands) {
 		String output = null;
 		
 		try {
-			Process proc = Runtime.getRuntime().exec(commands);
+			java.lang.Process proc = Runtime.getRuntime().exec(commands);
 
 			BufferedReader stdInput = new BufferedReader(new 
 					InputStreamReader(proc.getInputStream()));

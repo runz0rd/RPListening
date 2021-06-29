@@ -120,13 +120,12 @@ private static String TAG = "RTPThreadHandler";
 		PayloadType = PrivateListeningSession.getPayloadType();
 
 		try {
-
 			RTCPSenderSocket = new DatagramSocket(m_mcastPort);
 			loopbackSocket = new DatagramSocket(5152);
 			
 			// s.joinGroup ( m_InetAddress );
 
-			while (!Thread.currentThread().isInterrupted()) {
+			while (!isInterrupted()) {
 				RTCPSenderSocket.receive(packet);
 				
 				Runnable runnable = new Runnable() {
@@ -204,9 +203,6 @@ private static String TAG = "RTPThreadHandler";
 							+ packet.getLength());
 				}
 			}
-
-			RTCPSenderSocket.close();
-			loopbackSocket.close();
 			
 			// s.leaveGroup( m_InetAddress );
 			// s.close();
@@ -217,6 +213,9 @@ private static String TAG = "RTPThreadHandler";
 			ex.printStackTrace();
 			Log.d(TAG, ex.getMessage());
 		}
+		
+		RTCPSenderSocket.close();
+		loopbackSocket.close();
 	}
 
 	private synchronized void startRTCPRSender() {

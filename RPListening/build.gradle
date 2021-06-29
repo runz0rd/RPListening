@@ -56,6 +56,7 @@ dependencies {
     compile 'org.simpleframework:simple-xml:2.7.1'
     compile 'org.jdom:jdom2:2.0.6'
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.5.10"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0'
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:28.2-jre'

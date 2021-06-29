@@ -124,80 +124,80 @@ public class RTCPSenderThread extends Thread {
 		Log.d(TAG, "RTCP Group: " + m_InetAddress.toString() + ":" + m_MulticastRTCPPort);
 		Log.d(TAG, "RTCP Local port for sending: " + m_SendFromPort);
 
-		// flag terminates the endless while loop
-		boolean terminate = false;
+		try {
+			// flag terminates the endless while loop
+			boolean terminate = false;
 
-		while (!terminate) {
-			if (!sentAppPacketOne) {
-				byte CompoundRTCPPacket[] = AssembleRTCPPacket();
-				SendPacket(CompoundRTCPPacket);
-				CompoundRTCPPacket = AssembleRTCPPacket();
-				SendPacket(CompoundRTCPPacket);
-				CompoundRTCPPacket = AssembleRTCPPacket();
-				SendPacket(CompoundRTCPPacket);
-			}
-
-			// Update T and Td (Session level variables)
-			PrivateListeningSession.CalculateInterval();
-
-			Log.d(TAG, "RTCP wait");
-
-			// If inturrepted during this sleep time, continue with execution
-			int sleepResult = SleepTillInterrupted(PrivateListeningSession.T);
-
-			if (sleepResult == 0) {
-				// Sleep was interrupted, this only occurs if thread
-				// was terminated to indicate a request to send a BYE packet
-				WaitingForByeBackoff = true;
-				PrivateListeningSession.IsByeRequested = true;
-			}
-
-			// See if it is the right time to send a RTCP packet or reschedule {{A True}}
-			if ((PrivateListeningSession.TimeOfLastRTCPSent + PrivateListeningSession.T) <= PrivateListeningSession.CurrentTime()) {
-				// We know that it is time to send a RTCP packet, is it a BYE packet {{B True}}
-				if ((PrivateListeningSession.IsByeRequested && WaitingForByeBackoff)) {
-					// If it is bye then did we ever sent anything {{C True}}
-					if (PrivateListeningSession.TimeOfLastRTCPSent > 0 && PrivateListeningSession.timeOfLastRTPSent > 0) {
-						// ** BYE Backoff Algorithm **
-						// Yes, we did send something, so we need to send this RTCP BYE
-						// but first remove all sources from the table
-						PrivateListeningSession.RemoveAllSources();
-
-						// We are not active senders anymore
-						PrivateListeningSession.GetMySource().setActiveSender(false);
-						PrivateListeningSession.TimeOfLastRTCPSent = PrivateListeningSession.CurrentTime();
-					} else // We never sent anything and we have to quit :( do not send BYE {{C False}}
-					{
-						terminate = true;
-					}
-				} else // {{B False}}
-				{
+			while (!isInterrupted() /*|| !terminate*/) {
+				if (!sentAppPacketOne) {
 					byte CompoundRTCPPacket[] = AssembleRTCPPacket();
 					SendPacket(CompoundRTCPPacket);
-
-					// If the packet just sent was a BYE packet, then its time to terminate.
-					if (PrivateListeningSession.IsByeRequested && !WaitingForByeBackoff) // {{D True}}
-					{
-						// We have sent a BYE packet, so its time to terminate
-						terminate = true;
-					} else // {{D False}}
-					{
-						PrivateListeningSession.TimeOfLastRTCPSent = PrivateListeningSession.CurrentTime();
-					}
-
+					CompoundRTCPPacket = AssembleRTCPPacket();
+					SendPacket(CompoundRTCPPacket);
+					CompoundRTCPPacket = AssembleRTCPPacket();
+					SendPacket(CompoundRTCPPacket);
 				}
-			} else // This is not the right time to send a RTCP packet, just reschedule // {{A
-					// False}}
-			{
-				;
+
+				// Update T and Td (Session level variables)
+				PrivateListeningSession.CalculateInterval();
+
+				Log.d(TAG, "RTCP wait");
+
+				// If inturrepted during this sleep time, continue with execution
+				int sleepResult = SleepTillInterrupted(PrivateListeningSession.T);
+
+				if (sleepResult == 0) {
+					// Sleep was interrupted, this only occurs if thread
+					// was terminated to indicate a request to send a BYE packet
+					WaitingForByeBackoff = true;
+					PrivateListeningSession.IsByeRequested = true;
+				}
+
+				// See if it is the right time to send a RTCP packet or reschedule {{A True}}
+				if ((PrivateListeningSession.TimeOfLastRTCPSent + PrivateListeningSession.T) <= PrivateListeningSession.CurrentTime()) {
+					// We know that it is time to send a RTCP packet, is it a BYE packet {{B True}}
+					if ((PrivateListeningSession.IsByeRequested && WaitingForByeBackoff)) {
+						// If it is bye then did we ever sent anything {{C True}}
+						if (PrivateListeningSession.TimeOfLastRTCPSent > 0 && PrivateListeningSession.timeOfLastRTPSent > 0) {
+							// ** BYE Backoff Algorithm **
+							// Yes, we did send something, so we need to send this RTCP BYE
+							// but first remove all sources from the table
+							PrivateListeningSession.RemoveAllSources();
+
+							// We are not active senders anymore
+							PrivateListeningSession.GetMySource().setActiveSender(false);
+							PrivateListeningSession.TimeOfLastRTCPSent = PrivateListeningSession.CurrentTime();
+						} else // We never sent anything and we have to quit :( do not send BYE {{C False}}
+						{
+							terminate = true;
+						}
+					} else // {{B False}}
+					{
+						byte CompoundRTCPPacket[] = AssembleRTCPPacket();
+						SendPacket(CompoundRTCPPacket);
+
+						// If the packet just sent was a BYE packet, then its time to terminate.
+						if (PrivateListeningSession.IsByeRequested && !WaitingForByeBackoff) // {{D True}}
+						{
+							// We have sent a BYE packet, so its time to terminate
+							terminate = true;
+						} else // {{D False}}
+						{
+							PrivateListeningSession.TimeOfLastRTCPSent = PrivateListeningSession.CurrentTime();
+						}
+
+					}
+				}
+
+				WaitingForByeBackoff = false;
+				PrivateListeningSession.tn = PrivateListeningSession.CurrentTime() + PrivateListeningSession.T;
+				PrivateListeningSession.pmembers = PrivateListeningSession.GetNumberOfMembers();
 			}
-
-			WaitingForByeBackoff = false;
-			PrivateListeningSession.tn = PrivateListeningSession.CurrentTime() + PrivateListeningSession.T;
-			PrivateListeningSession.pmembers = PrivateListeningSession.GetNumberOfMembers();
-
+		} catch (Exception ex) {
+			Log.d(TAG, ex.getMessage());
+		} finally {
+			m_RTCPSenderSocket.close();
 		}
-
 	}
 
 	/**
@@ -207,16 +207,12 @@ public class RTCPSenderThread extends Thread {
 	 *
 	 * @param Seconds No. of seconds to sleep
 	 * @return 0 if interrupted, 1 if the sleep progressed normally
+	 * @throws InterruptedException 
 	 */
 
-	int SleepTillInterrupted(double Seconds) {
-		try {
-			sleep((long) Seconds * 1000);
-			Log.d(TAG, "In sleep function after sleep.");
-		} catch (InterruptedException e) {
-			Log.d(TAG, "Interrupted");
-			return (0);
-		}
+	int SleepTillInterrupted(double Seconds) throws InterruptedException {
+		sleep((long) Seconds * 1000);
+		Log.d(TAG, "In sleep function after sleep.");
 
 		Log.d(TAG, "Just woke up after try");
 		return (1);

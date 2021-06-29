@@ -28,6 +28,7 @@ import wseemann.media.rplistening.protocol.rtcp.RTCPThreadHandler;
 import wseemann.media.rplistening.protocol.rtp.RTPThreadHandler;
 import wseemann.media.rplistening.utils.Constants;
 import wseemann.media.rplistening.utils.Log;
+import wseemann.media.rplistening.utils.Process;
 import wseemann.media.rplistening.utils.ShellCommand;
 import wseemann.media.rplistening.websocket.RokuWebSocketListener;
 import wseemann.media.rplistening.websocket.WebSocketConnectionImpl;
@@ -222,9 +223,7 @@ public class PrivateListeningSession extends java.lang.Object {
 							);
 					session.setPayloadType(Constants.RTP_PAYLOAD_TYPE);
 					session.startRTPReceiverThread();
-
-					ShellCommand shellCommand = new ShellCommand();
-					ffplayProcess = shellCommand.executeCommand("");
+					session.startAudioDecoder();
 					listener.onConnected(session);
 				}
 
@@ -237,24 +236,15 @@ public class PrivateListeningSession extends java.lang.Object {
 			webSocketConnection.connect();
 		} catch (IOException e) {
 			listener.onFailure(e);
-			return;
 		}
 	}
 	
 	public static void disconnect(PrivateListeningSession session) {
 		if (session != null) {
+			webSocketConnection.disconnect();
 			session.stopRTCPSenderThread();
 			session.stopRTPReceiverThread();
-			
-			synchronized(ffplayProcess) {
-				if (ffplayProcess != null) {
-					try {
-						ffplayProcess.destroyForcibly().wait(4000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
+			session.stopAudioDecoder();
 		}
 	}
 	
@@ -267,7 +257,7 @@ public class PrivateListeningSession extends java.lang.Object {
 
 		String supportsPrivateListening = device.getSupportsPrivateListening();
 
-		if (supportsPrivateListening == null || Boolean.valueOf(supportsPrivateListening) == false) {
+		if (!Boolean.parseBoolean(supportsPrivateListening)) {
 			listener.onFailure(new Exception("Device does not support private listening"));
 		}
 	}
@@ -343,11 +333,28 @@ public class PrivateListeningSession extends java.lang.Object {
 	}
 	
 	/**
-	 * Starts the RTCP Sender thread
+	 * Stops the RTCP Sender thread
 	 *
 	 */
 	public synchronized void stopRTCPSenderThread() {
 		m_RTCPHandler.stopRTCPSenderThread();
+	}
+
+	/**
+	 * Starts the audio decoder
+	 *
+	 */
+	public synchronized void startAudioDecoder() {
+		ShellCommand shellCommand = new ShellCommand();
+		ffplayProcess = shellCommand.execute("");
+	}
+
+	/**
+	 * Stop the audio decoder
+	 *
+	 */
+	public synchronized void stopAudioDecoder() {
+		ffplayProcess.destroy();
 	}
 
 	/**
