@@ -30,15 +30,15 @@ public class RTPThreadHandler {
 	 * Reference to the RTCP Sender Thread
 	 * 
 	 */
-	private RTPReceiverThread rtpReceiverThread;
+	private final RTPReceiverThread rtpReceiverThread;
 
 	/**
 	 * Constructor creates the receiver threads. (Does not start the
 	 * threads)
 	 *
-	 * @param MulticastAddress  Dotted representation of the Multicast address.
-	 * @param SendFromLocalPort Port used to send RTP Packets.
-	 * @param MulticastPort     Port for Multicast group (for receiving RTP
+	 * @param multicastAddress  Dotted representation of the Multicast address.
+	 * @param loopbackAddress   Port used to send RTP Packets.
+	 * @param multicastPort     Port for Multicast group (for receiving RTP
 	 *                          Packets).
 	 */
 	public RTPThreadHandler(InetAddress multicastAddress, InetAddress loopbackAddress, int multicastPort) {

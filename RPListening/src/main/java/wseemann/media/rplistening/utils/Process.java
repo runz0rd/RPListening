@@ -23,7 +23,7 @@ import java.io.IOException;
 
 public class Process {
 
-    private java.lang.Process process;
+    private final java.lang.Process process;
 
     public Process(java.lang.Process process) {
         this.process = process;
@@ -37,7 +37,7 @@ public class Process {
                 process.getOutputStream().close();
                 process.getErrorStream().close();
                 Runtime.getRuntime().exec("pkill ffplay");
-            } catch (IOException e) {
+            } catch (IOException ex) {
             }
         }
     }

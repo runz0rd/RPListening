@@ -220,10 +220,6 @@ public class Source {
 		this.activeSender = activeSender;
 	}
 
-	public double getTimeOfLastRTCPArrival() {
-		return timeOfLastRTCPArrival;
-	}
-
 	public void setTimeOfLastRTCPArrival(double timeOfLastRTCPArrival) {
 		this.timeOfLastRTCPArrival = timeOfLastRTCPArrival;
 	}
@@ -304,10 +300,6 @@ public class Source {
 		return WRAPMAX;
 	}
 
-	public void setWRAPMAX(long wRAPMAX) {
-		WRAPMAX = wRAPMAX;
-	}
-	
 	/**
 	 * Returns the extended maximum sequence for a source considering that sequences
 	 * cycle.
@@ -350,7 +342,7 @@ public class Source {
 	 * block about this source.
 	 * 
 	 */
-	public int UpdateStatistics() {
+	public void UpdateStatistics() {
 		// Set all the relevant parameters
 
 		// Calculate the highest sequence number received in an RTP Data Packet from
@@ -383,7 +375,6 @@ public class Source {
 		// dlsr - express it in units of 1/65336 seconds
 		setDlsr((getTimeOfLastSRRcvd() - PrivateListeningSession.CurrentTime()) / 65536);
 
-		return 0;
 	}
 
 }

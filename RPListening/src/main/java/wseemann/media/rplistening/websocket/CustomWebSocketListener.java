@@ -83,7 +83,7 @@ public class CustomWebSocketListener extends WebSocketListener {
 				AuthResponse authResponse = new AuthResponse();
 				authResponse.setRequest(authChallengeResponse.getNotify());
 				authResponse.setRequestId("0");
-				authResponse.setParamResponse(AuthUtils.generateAuthReponse(authChallengeResponse));
+				authResponse.setParamResponse(AuthUtils.generateAuthResponse(authChallengeResponse));
 
 				webSocket.send(gson.toJson(authResponse));
 			}

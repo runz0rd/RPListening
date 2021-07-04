@@ -1,6 +1,6 @@
 /*
  * RPListening: An Open Source desktop client for Roku private listening.
- * 
+ *
  * Copyright (C) 2021 William Seemann
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,15 +41,15 @@ import java.net.*;
  * functions.
  */
 
-public class PrivateListeningSession extends java.lang.Object {
+public class PrivateListeningSession {
 
-	private static String TAG = "Session";
-	
+	private static final String TAG = "Session";
+
 	/**
 	 * Bandwidth Available to the session.
 	 *
 	 */
-	private double bandwidth;
+	private final double bandwidth;
 
 	/**
 	 * Payload type for this session.
@@ -93,7 +93,7 @@ public class PrivateListeningSession extends java.lang.Object {
 	 * Initialize the Random Number Generator.
 	 *
 	 */
-	private static Random rnd = new Random();
+	private static final Random rnd = new Random();
 
 	/**
 	 * RTCP Related state variables. (Sec. 6.3 draft-ietf-avt-rtp-new.ps)
@@ -170,12 +170,12 @@ public class PrivateListeningSession extends java.lang.Object {
 	/**
 	 * A hastable that stores all the sources subscribed to this multicast group
 	 */
-	private static Hashtable<Long, Source> SourceMap;
+	private static Hashtable<Long, Source> sourceMap;
 
 	private static WebSocketConnectionImpl webSocketConnection;
 	private static PrivateListeningSession session;
 	private static Process ffplayProcess;
-	
+
 	/**
 	 * Requires CNAME and session bandwidth. Initializes the SSRC to a randomly generated number.
 	 *
@@ -219,7 +219,7 @@ public class PrivateListeningSession extends java.lang.Object {
 							Constants.RTP_PORT,
 							Constants.RTCP_PORT,
 							Constants.RTP_PORT,
-							10000	
+							10000
 							);
 					session.setPayloadType(Constants.RTP_PAYLOAD_TYPE);
 					session.startRTPReceiverThread();
@@ -238,7 +238,7 @@ public class PrivateListeningSession extends java.lang.Object {
 			listener.onFailure(e);
 		}
 	}
-	
+
 	public static void disconnect(PrivateListeningSession session) {
 		if (session != null) {
 			webSocketConnection.disconnect();
@@ -247,11 +247,11 @@ public class PrivateListeningSession extends java.lang.Object {
 			session.stopAudioDecoder();
 		}
 	}
-	
+
 	public static void setDebugMode(boolean isDebugMode) {
 		Log.suppressLogs = !isDebugMode;
 	}
-	
+
 	private static void supportsPrivateListening(String rokuAddress, ConnectionListener listener) throws IOException {
 		Device device = QueryRequests.queryDeviceInfo(rokuAddress);
 
@@ -261,7 +261,7 @@ public class PrivateListeningSession extends java.lang.Object {
 			listener.onFailure(new Exception("Device does not support private listening"));
 		}
 	}
-	
+
 	/**
 	 * The only constructor. Requires CNAME and session bandwidth. Initializes the
 	 * SSRC to a randomly generated number.
@@ -279,13 +279,17 @@ public class PrivateListeningSession extends java.lang.Object {
 	 *                                RTCPGroupPort).
 	 * @param bandwidth               Bandwidth available to the session.
 	 */
-	private PrivateListeningSession(String MulticastGroupIPAddress, String loopbackIPAddress, int MulticastGroupPort, int RTCPGroupPort,
-			int RTCPSendFromPort, double bandwidth)
-
-	{
+	private PrivateListeningSession(
+	        String MulticastGroupIPAddress,
+            String loopbackIPAddress,
+            int MulticastGroupPort,
+            int RTCPGroupPort,
+			int RTCPSendFromPort,
+            double bandwidth
+    ) {
 		this.bandwidth = bandwidth;
 
-		SourceMap = new Hashtable<Long, Source>();
+		sourceMap = new Hashtable<>();
 
 		InetAddress inetAddress = GetInetAddress(MulticastGroupIPAddress);
 		InetAddress loopbackAddress = GetInetAddress(loopbackIPAddress);
@@ -331,7 +335,7 @@ public class PrivateListeningSession extends java.lang.Object {
 	public synchronized void stopRTPReceiverThread() {
 		m_RTPHandler.stopRTPReceiverThread();
 	}
-	
+
 	/**
 	 * Stops the RTCP Sender thread
 	 *
@@ -370,8 +374,8 @@ public class PrivateListeningSession extends java.lang.Object {
 	public synchronized static Source GetSource(long keySSRC) {
 		Source s;
 
-		if (SourceMap.containsKey(new Long(keySSRC)))
-			s = (Source) SourceMap.get(new Long(keySSRC));
+		if (sourceMap.containsKey(new Long(keySSRC)))
+			s = (Source) sourceMap.get(new Long(keySSRC));
 		else // source doesn't exist in the map, add it
 		{
 			s = new Source(keySSRC);
@@ -385,20 +389,18 @@ public class PrivateListeningSession extends java.lang.Object {
 	/**
 	 * Removes a source from the map.
 	 *
-	 * @param sourceSSRC The source with this SSRC has to be removed.
-	 */
-	public synchronized static int RemoveSource(long sourceSSRC) {
-		if (SourceMap.get(new Long(sourceSSRC)) != null) {
-			SourceMap.remove(new Long(sourceSSRC));
+     * @param sourceSSRC The source with this SSRC has to be removed.
+     */
+	public synchronized static void RemoveSource(long sourceSSRC) {
+		if (sourceMap.get(sourceSSRC) != null) {
+			sourceMap.remove(sourceSSRC);
 			Log.d(TAG, "Removing Source : " + "SSRC = 0x" + Integer.toHexString((int) sourceSSRC));
 			Log.d(TAG, "No. of members" + GetNumberOfMembers());
 			Log.d(TAG, "No. of senders" + GetNumberOfActiveSenders());
 		} else {
 			Log.d(TAG, "Trying to remove SSRC which doesnt exist :" + sourceSSRC);
 		}
-
-		return 0;
-	}
+    }
 
 	/**
 	 * Creates and return a InetAddress object.
@@ -411,8 +413,8 @@ public class PrivateListeningSession extends java.lang.Object {
 		InetAddress ia = null;
 		try {
 			ia = InetAddress.getByName(MulticastAddress);
-		} catch (Exception e) {
-			System.err.println(e);
+		} catch (Exception ex) {
+			System.err.println(ex.getMessage());
 			System.exit(1);
 		}
 
@@ -426,7 +428,7 @@ public class PrivateListeningSession extends java.lang.Object {
 	 */
 	public static int GetNumberOfMembers() {
 		// Go through the map and return the total number of sources.
-		return SourceMap.size();
+		return sourceMap.size();
 	}
 
 	/**
@@ -436,12 +438,12 @@ public class PrivateListeningSession extends java.lang.Object {
 	 */
 	public static int GetNumberOfActiveSenders() {
 		// Hasttable
-		Enumeration SourceCollection = GetSources();
+		Enumeration<Source> SourceCollection = GetSources();
 		int i = 0;
 		while (SourceCollection.hasMoreElements()) {
-			Source s = (Source) SourceCollection.nextElement();
+			Source s = SourceCollection.nextElement();
 
-			if (s.isActiveSender() == true) {
+			if (s.isActiveSender()) {
 				i++;
 			}
 		}
@@ -454,10 +456,8 @@ public class PrivateListeningSession extends java.lang.Object {
 	 * Method to calculate the RTCP transmission interval T. from Section A7
 	 * Computing the RTCP Transmission Interval ( with minor modifications )
 	 *
-	 * @return The Calculated Interval
-	 */
-	public static synchronized double CalculateInterval() {
-		long td = 0;
+     */
+	public static synchronized void CalculateInterval() {
 		// Update T and Td ( same as rtcp_interval() function in rfc.
 
 		int members = GetNumberOfMembers();
@@ -478,7 +478,7 @@ public class PrivateListeningSession extends java.lang.Object {
 		 * report time so that we don't unnecessarily slow down receiver reports.) The
 		 * receiver fraction must be 1 � the sender fraction.
 		 */
-		final double RTCP_SENDER_BW_FRACTION = (double) 0.25;
+		final double RTCP_SENDER_BW_FRACTION = 0.25;
 		final double RTCP_RCVR_BW_FRACTION = (1 - RTCP_SENDER_BW_FRACTION);
 		double t; /* interval */
 		double rtcp_min_time = RTCP_MIN_TIME;
@@ -517,7 +517,7 @@ public class PrivateListeningSession extends java.lang.Object {
 		 * time interval we send one report so this time is also our average time
 		 * between reports.
 		 */
-		t = (double) avg_rtcp_size * n / rtcp_bw;
+		t = avg_rtcp_size * n / rtcp_bw;
 		if (t < rtcp_min_time)
 			t = rtcp_min_time;
 		/*
@@ -528,23 +528,22 @@ public class PrivateListeningSession extends java.lang.Object {
 		double noise = (rnd.nextDouble() + 0.5);
 
 		PrivateListeningSession.Td = t;
-		PrivateListeningSession.T = t * (double) noise;
-		return t;
-	}
+		PrivateListeningSession.T = t * noise;
+    }
 
 	/**
 	 * Initialize the Session level variables.
 	 *
 	 */
-	public int Initialize() {
+	public void Initialize() {
 		TimeOfLastRTCPSent = CurrentTime();
 		tc = CurrentTime();
 		pmembers = 1;
 		we_sent = true;
-		rtcp_bw = (double) 0.05 * (double) bandwidth;
+		rtcp_bw = 0.05 * bandwidth;
 		initial = true;
 		avg_pkt_sz = 0; // TODO: Set the the size of the first packet generated by app
-		SSRC = (long) Math.abs(rnd.nextInt());
+		SSRC = Math.abs(rnd.nextInt());
 
 		packetCount = 0;
 		octetCount = 0;
@@ -555,8 +554,7 @@ public class PrivateListeningSession extends java.lang.Object {
 		// Add self as a source object into the SSRC table maintained by the session
 		PrivateListeningSession.AddSource(PrivateListeningSession.SSRC, new Source(PrivateListeningSession.SSRC));
 
-		return (0);
-	}
+    }
 
 	/**
 	 * Returns a self source object.
@@ -564,8 +562,7 @@ public class PrivateListeningSession extends java.lang.Object {
 	 * @return My source object.
 	 */
 	public static synchronized Source GetMySource() {
-		Source s = (Source) SourceMap.get(new Long(SSRC));
-		return s;
+		return sourceMap.get(SSRC);
 
 	}
 
@@ -574,55 +571,27 @@ public class PrivateListeningSession extends java.lang.Object {
 	 *
 	 * @param newSSRC SSRC of the source being added.
 	 * @param src     Source object of the source being added.
-	 * @return -1 if the source with this SSRC already exists, 1 otherwise (source
-	 *         added).
-	 */
+     */
 
-	public static int AddSource(long newSSRC, Source src) {
+	public static void AddSource(long newSSRC, Source src) {
 
-		if (SourceMap.containsKey(new Long(newSSRC))) {
-			return -1;
-		} else {
-			SourceMap.put(new Long(newSSRC), src);
+		if (sourceMap.containsKey(newSSRC)) {
+        } else {
+			sourceMap.put(newSSRC, src);
 			Log.d(TAG, "Adding Source : " + "SSRC = 0x" + Integer.toHexString((int) newSSRC));
 			Log.d(TAG, "No. of members" + GetNumberOfMembers());
 			Log.d(TAG, "No. of senders" + GetNumberOfActiveSenders());
 
 		}
-		return 1;
-	}
+    }
 
-	/**
-	 * Returns all active senders as an iterable enumeration.
-	 *
-	 * @return Enumeration of all active senders.
-	 */
-	public static synchronized Enumeration GetActiveSenders() {
-		Enumeration EnumAllMembers = SourceMap.elements();
-
-		Vector VectActiveSenders = new Vector();
-
-		Source s;
-
-		// Go through this enumeration and for each source
-		// if it is and active sender, add into a temp vector
-		while (EnumAllMembers.hasMoreElements()) {
-			s = (Source) EnumAllMembers.nextElement();
-			if (s.isActiveSender())
-				VectActiveSenders.addElement(s);
-		}
-
-		// Return the enumeration of the temp vector.
-		return (VectActiveSenders.elements());
-	}
-
-	/**
+    /**
 	 * Return an iterable enumeration of all sources contained in the Map.
 	 *
 	 * @return Enumeration of all the sources (members).
 	 */
-	public static synchronized Enumeration GetSources() {
-		return SourceMap.elements();
+	public static synchronized Enumeration<Source> GetSources() {
+		return sourceMap.elements();
 	}
 
 	/**
@@ -639,25 +608,20 @@ public class PrivateListeningSession extends java.lang.Object {
 	 * Function removes all sources from the members table (except self). Returns
 	 * number of sources removed.
 	 *
-	 * @return Number of sources successfully removed.
-	 */
-	public static synchronized int RemoveAllSources() {
-		Enumeration SourceCollection = GetSources();
+     */
+	public static synchronized void RemoveAllSources() {
+		Enumeration<Source> SourceCollection = GetSources();
 
-		int n = 0;
-
-		while (SourceCollection.hasMoreElements()) {
-			Source s = (Source) SourceCollection.nextElement();
+        while (SourceCollection.hasMoreElements()) {
+			Source s = SourceCollection.nextElement();
 
 			if (s.getSsrc() != SSRC) {
 				RemoveSource(s.getSsrc());
-				n++;
-			}
+            }
 		}
 
 		pmembers = 1;
 		CalculateInterval();
 
-		return (n);
-	}
+    }
 }

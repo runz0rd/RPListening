@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.util.Random;
 
 import wseemann.media.rplistening.protocol.PrivateListeningSession;
@@ -13,24 +12,24 @@ import wseemann.media.rplistening.utils.Log;
 
 public class RTPReceiverThread extends Thread {
 
-private static String TAG = "RTPThreadHandler";
+	private static final String TAG = "RTPThreadHandler";
 	
 	private boolean startedRTCPSender = false;
 
 	/**
 	 * Multicast Port for RTP Packets
 	 */
-	private int m_mcastPort;
+	private final int m_mcastPort;
 
 	/**
 	 * Sender Address for RTP Packets
 	 */
-	private InetAddress m_InetAddress;
+	private final InetAddress m_InetAddress;
 
 	/**
 	 * Sender Loopback Address for RTP Packets
 	 */
-	private InetAddress m_loopbackAddress;
+	private final InetAddress m_loopbackAddress;
 	
 	private DatagramSocket RTCPSenderSocket;
 	private DatagramSocket loopbackSocket;
@@ -44,11 +43,6 @@ private static String TAG = "RTPThreadHandler";
 	 * Random Offset -32 bit
 	 */
 	public static final short RandomOffset = (short) Math.abs(RandomNumGenerator.nextInt() & 0x000000FF);
-
-	/**
-	 * RTP Header Length = 12
-	 */
-	public static final int RTP_PACKET_HEADER_LENGTH = 12;
 
 	/**********************************************************************************************
 	 * RTP Header related fields
@@ -76,7 +70,7 @@ private static String TAG = "RTPThreadHandler";
 	 * the port number given
 	 *
 	 * @param MulticastAddress  Dotted representation of the Multicast address.
-	 * @param SendFromLocalPort Port used to send RTP Packets.
+	 * @param loopbackAddress   Port used to send RTP Packets.
 	 * @param MulticastPort     Port for Multicast group (for receiving RTP
 	 *                          Packets).
 	 *
@@ -92,7 +86,7 @@ private static String TAG = "RTPThreadHandler";
 		Random rnd = new Random(); // Use time as default seed
 
 		// Start with a random sequence number
-		sequence_number = (long) (Math.abs(rnd.nextInt()) & 0x000000FF);
+		sequence_number = Math.abs(rnd.nextInt()) & 0x000000FF;
 		timestamp = PrivateListeningSession.CurrentTime() + RandomOffset;
 
 		Log.d(TAG, "RTP Session SSRC: " + Long.toHexString(PrivateListeningSession.SSRC));
@@ -114,7 +108,7 @@ private static String TAG = "RTPThreadHandler";
 		Log.d(TAG, "RTP Thread started ");
 		Log.d(TAG, "RTP Group: " + m_InetAddress + "/" + m_mcastPort);
 
-		byte buf[] = new byte[1024];
+		byte [] buf = new byte[1024];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
 		PayloadType = PrivateListeningSession.getPayloadType();
@@ -122,33 +116,16 @@ private static String TAG = "RTPThreadHandler";
 		try {
 			RTCPSenderSocket = new DatagramSocket(m_mcastPort);
 			loopbackSocket = new DatagramSocket(5152);
-			
-			// s.joinGroup ( m_InetAddress );
 
 			while (!isInterrupted()) {
 				RTCPSenderSocket.receive(packet);
-				
-				Runnable runnable = new Runnable() {
-					@Override
-					public void run() {
-						try {
-							// Create a datagram packet from the RTP byte packet and set ttl and send
-							DatagramPacket pkt = new DatagramPacket(packet.getData(), packet.getLength(),
-									m_loopbackAddress, 5153);
-							loopbackSocket.send(pkt);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}							
-					}
-            	};
-            	Thread thread = new Thread(runnable);
-            	thread.start();
-				
+				startPacketForward(packet);
+
 				if (ValidateRTPPacketHeader(packet.getData())) {
-					long SSRC = 0;
-					int TimeStamp = 0;
-					short SeqNo = 0;
-					byte PT = 0;
+					long SSRC;
+					int TimeStamp;
+					short SeqNo;
+					byte PT;
 
 					PT = (byte) ((buf[1] & 0xff) & 0x7f);
 					SeqNo = (short) ((buf[2] << 8) | (buf[3] & 0xff));
@@ -161,21 +138,6 @@ private static String TAG = "RTPThreadHandler";
 					Log.d(TAG, "ssrc=0x" + Long.toHexString(SSRC) + "\tts=" + TimeStamp + "\tseq=" + SeqNo + "\tpt=" + PT);
 					Log.d(TAG, ")");
 
-					// Create a RTPPacket and post it with Session.
-					// If there are any interested actionListeners, they will get it.
-					RTPPacket rtppkt = new RTPPacket();
-					rtppkt.setCSRCCount(0);
-					rtppkt.setSequenceNumber(SeqNo);
-					rtppkt.setTimestamp(TimeStamp);
-					rtppkt.setSSRC(SSRC);
-
-					// the payload is after the fixed 12 byte header
-					byte payload[] = new byte[packet.getLength() - RTP_PACKET_HEADER_LENGTH];
-
-					for (int i = 0; i < payload.length; i++)
-						payload[i] = buf[i + RTP_PACKET_HEADER_LENGTH];
-
-					rtppkt.setData(payload);
 					startRTCPRSender();
 
 					// Get the source corresponding to this SSRC
@@ -203,31 +165,35 @@ private static String TAG = "RTPThreadHandler";
 							+ packet.getLength());
 				}
 			}
-			
-			// s.leaveGroup( m_InetAddress );
-			// s.close();
-		} catch (SocketException ex) {
-			ex.printStackTrace();
-			Log.d(TAG, ex.getMessage());
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			Log.d(TAG, ex.getMessage());
 		}
-		
+
 		RTCPSenderSocket.close();
 		loopbackSocket.close();
+	}
+
+	private void startPacketForward(DatagramPacket packet) {
+		Runnable runnable = () -> {
+			try {
+				// Create a datagram packet from the RTP byte packet and set ttl and send
+				DatagramPacket pkt = new DatagramPacket(packet.getData(), packet.getLength(),
+						m_loopbackAddress, 5153);
+				loopbackSocket.send(pkt);
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		};
+		Thread thread = new Thread(runnable);
+		thread.start();
 	}
 
 	private synchronized void startRTCPRSender() {
 		if (!startedRTCPSender) {
 			startedRTCPSender = true;
 			// Starts the RTCP Sender thread
-			Runnable runnable = new Runnable() {
-				@Override
-				public void run() {
-					PrivateListeningSession.m_RTCPHandler.startRTCPSenderThread(RTCPSenderSocket);
-				}
-			};
+			Runnable runnable = () -> PrivateListeningSession.m_RTCPHandler.startRTCPSenderThread(RTCPSenderSocket);
 			Thread thread = new Thread(runnable);
 			thread.start();
 		}
@@ -237,12 +203,12 @@ private static String TAG = "RTPThreadHandler";
 	 * Validates RTP Packet. Returns true or false corresponding to the test
 	 * results.
 	 *
-	 * @param - packet[] The RTP Packet to be validated.
+	 * @param packet The RTP Packet to be validated.
 	 * @return True if validation was successful, False otherwise.
 	 */
-	public boolean ValidateRTPPacketHeader(byte packet[]) {
-		boolean versionValid = false;
-		boolean payloadTypeValid = false;
+	public boolean ValidateRTPPacketHeader(byte [] packet) {
+		boolean versionValid;
+		boolean payloadTypeValid;
 
 		// +-+-+-+-+-+-+-+-+
 		// |V=2|P|X| CC |

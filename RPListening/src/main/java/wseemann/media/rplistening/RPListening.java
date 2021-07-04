@@ -38,8 +38,8 @@ import tornadofx.App;
 
 public class RPListening {
 
-	private static String TAG = "RPListening";
-	
+	private static final String TAG = "RPListening";
+
 	private static String testDeviceIp = null;
 	private static PrivateListeningSession session = null;	
 

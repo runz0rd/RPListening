@@ -56,42 +56,22 @@ public class RTPPacket {
 	/**
 	 * The actual payload contained in a RTP Packet
 	 */
-	private byte data[];
-
-	public long getCSRCCount() {
-		return csrcCount;
-	}
+	private byte [] data;
 
 	public void setCSRCCount(long csrcCount) {
 		this.csrcCount = csrcCount;
-	}
-
-	public long getSequenceNumber() {
-		return sequenceNumber;
 	}
 
 	public void setSequenceNumber(long sequenceNumber) {
 		this.sequenceNumber = sequenceNumber;
 	}
 
-	public long getTimestamp() {
-		return timestamp;
-	}
-
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 
-	public long getSSRC() {
-		return ssrc;
-	}
-
 	public void setSSRC(long ssrc) {
 		this.ssrc = ssrc;
-	}
-
-	public byte[] getData() {
-		return data;
 	}
 
 	public void setData(byte data[]) {

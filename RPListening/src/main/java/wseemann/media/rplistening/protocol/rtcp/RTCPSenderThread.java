@@ -39,7 +39,7 @@ import wseemann.media.rplistening.utils.Log;
 
 public class RTCPSenderThread extends Thread {
 	
-	private static String TAG = "RTCPSenderThread";
+	private static final String TAG = "RTCPSenderThread";
 	
 	boolean sentAppPacketOne = false;
 	boolean sentAppPacketTwo = false;
@@ -47,12 +47,12 @@ public class RTCPSenderThread extends Thread {
 	/**
 	 * Sender Port for RTCP Packets
 	 */
-	private int m_SendFromPort;
+	private final int m_SendFromPort;
 
 	/**
 	 * Sender Address for RTCP Packets
 	 */
-	private InetAddress m_InetAddress;
+	private final InetAddress m_InetAddress;
 
 	/**
 	 * Multicast Socket for sending RTCP
@@ -62,7 +62,7 @@ public class RTCPSenderThread extends Thread {
 	/**
 	 * Multicast Port for RTCP Packets
 	 */
-	private int m_MulticastRTCPPort;
+	private final int m_MulticastRTCPPort;
 
 	/**
 	 * Flag used to determine when to terminate after sending a BYE

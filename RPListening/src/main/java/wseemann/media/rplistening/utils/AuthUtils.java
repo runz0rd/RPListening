@@ -31,10 +31,10 @@ public class AuthUtils {
 		
 	}
 	
-	public static String generateAuthReponse(AuthChallengeResponse authChallengeReponse) {
+	public static String generateAuthResponse(AuthChallengeResponse authChallengeReponse) {
 		String hash = "";
 		MessageDigest instance;
-		
+
 		StringBuilder sb = new StringBuilder();
 		sb.append(authChallengeReponse.getParamChallenge());
 		sb.append(generateHash("95E610D0-7C29-44EF-FB0F-97F1FCE4C297", 9));
@@ -45,8 +45,8 @@ public class AuthUtils {
 			instance = MessageDigest.getInstance("SHA-1");
 			instance.update(bytes, 0, bytes.length);
 			hash = Base64.getEncoder().encodeToString(instance.digest());
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
+		} catch (NoSuchAlgorithmException ex) {
+			ex.printStackTrace();
 		}
 		
 		return hash;

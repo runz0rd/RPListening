@@ -30,16 +30,16 @@ public class RTCPThreadHandler {
 	 * Reference to the RTCP Sender Thread
 	 * 
 	 */
-	private RTCPSenderThread rtcpSenderThread;
+	private final RTCPSenderThread rtcpSenderThread;
 
 	/**
 	 * Constructor creates the sender and receiver threads. (Does not start the
 	 * threads)
 	 *
-	 * @param MulticastGroupIPAddress Dotted representation of the Multicast
+	 * @param multicastGroupIPAddress Dotted representation of the Multicast
 	 *                                address.
-	 * @param RTCPSendFromPort        Port used to send RTCP Packets.
-	 * @param RTCPGroupPort           Port for Multicast group (for receiving RTCP
+	 * @param rtcpSendFromPort        Port used to send RTCP Packets.
+	 * @param rtcpGroupPort           Port for Multicast group (for receiving RTCP
 	 *                                Packets).
 	 */
 	public RTCPThreadHandler(InetAddress multicastGroupIPAddress, int rtcpSendFromPort, int rtcpGroupPort) {

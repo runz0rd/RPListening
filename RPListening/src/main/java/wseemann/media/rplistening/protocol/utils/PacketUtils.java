@@ -29,7 +29,7 @@ import wseemann.media.rplistening.utils.Log;
  */
 public class PacketUtils {
 	
-	private static String TAG = "PacketUtils";
+	private final static String TAG = "PacketUtils";
 	
 	/**
 	 * Append two byte arrays. Appends packet B at the end of Packet A (Assuming
@@ -81,7 +81,7 @@ public class PacketUtils {
 	 * @return The desired byte array which is populated with the long value.
 	 */
 	public synchronized static byte[] LongToBytes(long ldata, int n) {
-		byte buff[] = new byte[n];
+		byte [] buff = new byte[n];
 
 		for (int i = n - 1; i >= 0; i--) {
 			// Keep assigning the right most 8 bits to the

@@ -13,7 +13,7 @@ plugins {
 }
 
 sourceCompatibility = 1.8
-version = '1.0'
+version = '1.1'
 
 jar {
     manifest {
@@ -57,9 +57,6 @@ dependencies {
     compile 'org.jdom:jdom2:2.0.6'
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.5.10"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0'
-
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'com.google.guava:guava:28.2-jre'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
